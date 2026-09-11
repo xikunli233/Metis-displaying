@@ -1,9 +1,12 @@
 """
-Metis 6000 / 7000 流水线配置展示系统（仅正视图 + 实体尾端部件版）
+Metis 6000 / 7000 Automation Line Configurator
 ------------------------------------------------
-图片资源目录：assets/images/
-命名规则：{img_key}.png
-尾端部件：tail_end.png（固定长度 100 mm，位于最左端，不显示参数卡片）
+Features:
+- Front view only
+- No scaling; original image pixels are used directly
+- Tail end (10 cm) at the far left, no spec card
+- Images directory: assets/images/
+- Naming: {img_key}.png
 """
 
 from pathlib import Path
@@ -11,13 +14,12 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 
 # =============================================================================
-# 全局常量
+# Global constants
 # =============================================================================
 BASE_DIR = Path(__file__).resolve().parent
 IMG_DIR = BASE_DIR / "assets" / "images"
 IMG_DIR.mkdir(parents=True, exist_ok=True)
 
-TARGET_WIDTH = 1800
 MAX_ANALYZERS = 4
 MIN_ANALYZERS = 1
 
@@ -28,42 +30,40 @@ BRAND_LIGHT = "#E8F1FB"
 SEPARATOR_COLOR = (200, 210, 225, 255)
 
 # =============================================================================
-# 尾端部件（固定 10 cm，位于最左端，不显示参数卡片）
+# Tail end part (fixed 10 cm, far left, no spec card)
 # =============================================================================
 TAIL_MODEL = dict(
-    display="尾端模块",
+    display="Tail End",
     group="Tail",
     line="Tail End",
-    line_cn="尾端",
     L=100,          # 10 cm
     W=350,
     H=800,
     img="tail_end",
-    specs={},       # 空，不展示
+    specs={},
     show_card=False,
 )
 
 # =============================================================================
-# 产品数据
+# Product data
 # =============================================================================
 MODELS = {
-    # ---------------- 前处理模块 ----------------
+    # ---------------- Pre-analytical modules ----------------
     "SH80": dict(
         display="SH80",
         group="Pre",
         line="Pre-analytical",
-        line_cn="前处理",
         L=520, W=926, H=1055,
         img="sh80",
         show_card=True,
         specs={
-            "吞吐量": "500 管/小时",
-            "尺寸 (L×W×H)": "520 × 926 × 1055 mm",
-            "特点": [
-                "自动复测",
-                "自动条码扫描",
-                "实时急诊",
-                "实时提示",
+            "Throughput": "500 tubes/hour",
+            "Dimensions (L×W×H)": "520 × 926 × 1055 mm",
+            "Features": [
+                "Auto-retest",
+                "Auto-barcode scanning",
+                "Real-time emergency",
+                "Real-time prompting",
             ],
         },
     ),
@@ -71,17 +71,16 @@ MODELS = {
         display="SH80 + SHC200",
         group="Pre",
         line="Pre-analytical",
-        line_cn="前处理",
         L=1200, W=1050, H=1750,
         img="sh80_shc200",
         show_card=True,
         specs={
-            "吞吐量": "320 管/小时",
-            "尺寸 (L×W×H)": "1200 × 1050 × 1750 mm",
-            "离心机（选配）": "最大 80 管/次；3000–4000 rpm；5–20 ℃ 制冷",
-            "特点": [
-                "自动开盖与丢弃",
-                "自动平衡与离心",
+            "Throughput": "320 tubes/hour",
+            "Dimensions (L×W×H)": "1200 × 1050 × 1750 mm",
+            "Centrifuge (optional)": "Max 80 tubes/batch; 3000–4000 rpm; 5–20 ℃ refrigeration",
+            "Features": [
+                "Auto-decapping and disposing",
+                "Auto-balancing and centrifuging",
             ],
         },
     ),
@@ -89,18 +88,17 @@ MODELS = {
         display="SH600e",
         group="Pre",
         line="Pre-analytical",
-        line_cn="前处理",
         L=1170, W=1140, H=1450,
         img="sh600e",
         show_card=True,
         specs={
-            "吞吐量": "400 管/小时",
-            "尺寸 (L×W×H)": "1170 × 1140 × 1450 mm",
-            "离心机": "最大 80 管/次；3000–4000 rpm；5–20 ℃ 制冷",
-            "特点": [
-                "自动开盖与丢弃",
-                "自动平衡与离心",
-                "托盘式或倾倒式（选配）",
+            "Throughput": "400 tubes/hour",
+            "Dimensions (L×W×H)": "1170 × 1140 × 1450 mm",
+            "Centrifuge": "Max 80 tubes/batch; 3000–4000 rpm; 5–20 ℃ refrigeration",
+            "Features": [
+                "Auto-decapping and disposing",
+                "Auto-balancing and centrifuging",
+                "Tray-based or tilt pour (optional)",
             ],
         },
     ),
@@ -108,90 +106,86 @@ MODELS = {
         display="SH600",
         group="Pre",
         line="Pre-analytical",
-        line_cn="前处理",
         L=1170, W=1140, H=1450,
         img="sh600",
         show_card=True,
         specs={
-            "吞吐量": "400 管/小时",
-            "尺寸 (L×W×H)": "1170 × 1140 × 1450 mm",
-            "离心机": "最大 80 管/次；3000–4000 rpm；5–20 ℃ 制冷",
-            "特点": [
-                "自动开盖、丢弃与再盖帽",
-                "自动平衡与离心",
-                "托盘式或倾倒式（选配）",
-                "视觉识别评估离心状态与血清量",
-                "自动复溶 QC（配合 CS 700）",
+            "Throughput": "400 tubes/hour",
+            "Dimensions (L×W×H)": "1170 × 1140 × 1450 mm",
+            "Centrifuge": "Max 80 tubes/batch; 3000–4000 rpm; 5–20 ℃ refrigeration",
+            "Features": [
+                "Auto-decapping, disposing and recapping",
+                "Auto-balancing and centrifuging",
+                "Tray-based or tilt pour (optional)",
+                "Visual recognition to evaluate centrifuging status and serum volume",
+                "Automatic reconstitution QC (with CS 700)",
             ],
         },
     ),
 
-    # ---------------- 分析仪 ----------------
+    # ---------------- Analyzers ----------------
     "MAGICL 6200": dict(
         display="MAGICL 6200",
         group="CLIA",
         line="CLIA",
-        line_cn="化学发光",
         L=1100, W=930, H=1200,
         img="magicl_6200",
         show_card=True,
         specs={
-            "吞吐量": "400 T/h",
-            "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
-            "特点": [
-                "最快 12 分钟",
-                "4 级分离",
-                "205 个孵育位",
-                "30 位试剂盘，RFID 读取，4–8 ℃ 冷藏",
-                "一次性塑料比色杯 + 供杯器",
-                "双耗材系统",
-                "涡旋混匀",
-                "碰撞 / 液面 / 堵针检测",
+            "Throughput": "400 T/h",
+            "Dimensions (L×W×H)": "1100 × 930 × 1200 mm",
+            "Features": [
+                "Fastest 12 min",
+                "4-stage separation",
+                "205 incubators",
+                "30-reagent tray with RFID reader and 4–8 ℃ refrigeration",
+                "Disposable plastic cuvettes with feeder",
+                "Double consumable system",
+                "Vortex mixing",
+                "Collision / liquid level / clog detection",
             ],
-            "耗水量": "20 L/h",
+            "Water Consumption": "20 L/h",
         },
     ),
     "MAGICL 8500": dict(
         display="MAGICL 8500",
         group="CLIA",
         line="CLIA",
-        line_cn="化学发光",
         L=1100, W=930, H=1200,
         img="magicl_8500",
         show_card=True,
         specs={
-            "吞吐量": "600 T/h",
-            "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
-            "特点": [
-                "最快 12 分钟",
-                "4 级分离",
-                "244 个孵育位",
-                "30 位试剂盘，RFID 读取，4–8 ℃ 冷藏",
-                "一次性塑料比色杯 + 供杯器",
-                "双耗材系统",
-                "涡旋混匀",
-                "碰撞 / 液面 / 堵针检测",
+            "Throughput": "600 T/h",
+            "Dimensions (L×W×H)": "1100 × 930 × 1200 mm",
+            "Features": [
+                "Fastest 12 min",
+                "4-stage separation",
+                "244 incubators",
+                "30-reagent tray with RFID reader and 4–8 ℃ refrigeration",
+                "Disposable plastic cuvettes with feeder",
+                "Double consumable system",
+                "Vortex mixing",
+                "Collision / liquid level / clog detection",
             ],
-            "耗水量": "30 L/h",
+            "Water Consumption": "30 L/h",
         },
     ),
     "CA 5700": dict(
         display="CA 5700",
         group="Coagulation",
         line="Coagulation",
-        line_cn="凝血",
         L=1100, W=922, H=1340,
         img="ca_5700",
         show_card=True,
         specs={
-            "吞吐量": "400 T/h",
-            "尺寸 (L×W×H)": "1100 × 922 × 1340 mm",
-            "特点": [
-                "最快 3 分钟",
-                "滤光轮光谱仪",
-                "20 个孵育位",
-                "40 位试剂盘，条码读取，4–8 ℃ 冷藏",
-                "一次性塑料比色杯 + 供杯器",
+            "Throughput": "400 T/h",
+            "Dimensions (L×W×H)": "1100 × 922 × 1340 mm",
+            "Features": [
+                "Fastest 3 min",
+                "Filter wheel spectrometer",
+                "20 incubators",
+                "40-reagent tray with barcode reader and 4–8 ℃ refrigeration",
+                "Disposable plastic cuvettes with feeder",
             ],
         },
     ),
@@ -199,59 +193,56 @@ MODELS = {
         display="CM 1000",
         group="Chemistry",
         line="Clinical Chemistry",
-        line_cn="临床生化",
         L=1100, W=930, H=1200,
         img="cm_1000",
         show_card=True,
         specs={
-            "吞吐量": "1000 T/h",
-            "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
-            "特点": [
-                "最快 12.3 分钟",
-                "16 波长全息凹面平场光栅分光",
-                "103 位试剂盘，条码读取，4–8 ℃ 冷藏",
-                "270 个石英比色杯，干式加热 + 8 阶清洗",
-                "碰撞 / 液面 / 堵针检测",
+            "Throughput": "1000 T/h",
+            "Dimensions (L×W×H)": "1100 × 930 × 1200 mm",
+            "Features": [
+                "Fastest 12.3 min",
+                "16 wavelengths with holographic concave flat field grating splitting",
+                "103-reagent tray with barcode reader and 4–8 ℃ refrigeration",
+                "270 quartz cuvettes with dry heating and 8-stage washing",
+                "Collision / liquid level / clog detection",
             ],
-            "耗水量": "35 L/h",
+            "Water Consumption": "35 L/h",
         },
     ),
     "CM 1600": dict(
         display="CM 1600",
         group="Chemistry",
         line="Clinical Chemistry",
-        line_cn="临床生化",
         L=1100, W=930, H=1200,
         img="cm_1600",
         show_card=True,
         specs={
-            "吞吐量": "1600 T/h",
-            "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
-            "特点": [
-                "最快 9.15 分钟",
-                "16 波长全息凹面平场光栅分光",
-                "107 位试剂盘，条码读取，4–8 ℃ 冷藏",
-                "277 个石英比色杯，干式加热 + 8 阶清洗",
-                "碰撞 / 液面 / 堵针检测",
+            "Throughput": "1600 T/h",
+            "Dimensions (L×W×H)": "1100 × 930 × 1200 mm",
+            "Features": [
+                "Fastest 9.15 min",
+                "16 wavelengths with holographic concave flat field grating splitting",
+                "107-reagent tray with barcode reader and 4–8 ℃ refrigeration",
+                "277 quartz cuvettes with dry heating and 8-stage washing",
+                "Collision / liquid level / clog detection",
             ],
-            "耗水量": "67 L/h",
+            "Water Consumption": "67 L/h",
         },
     ),
 
-    # ---------------- 后处理模块 ----------------
+    # ---------------- Post-analytical module ----------------
     "CS 700": dict(
         display="CS 700",
         group="Post",
         line="Post-analytical",
-        line_cn="后处理",
         L=1020, W=1135, H=1450,
         img="cs_700",
         show_card=True,
         specs={
-            "容量": "4500 管",
-            "吞吐量": "1200 管/小时",
-            "尺寸 (L×W×H)": "1020 × 1135 × 1450 mm",
-            "特点": ["2–8 ℃ 冷藏"],
+            "Capacity": "4500 tubes",
+            "Throughput": "1200 tubes/hour",
+            "Dimensions (L×W×H)": "1020 × 1135 × 1450 mm",
+            "Features": ["2–8 ℃ refrigeration"],
         },
     ),
 }
@@ -260,7 +251,7 @@ PRE_OPTIONS = ["SH80", "SH80+SHC200", "SH600e", "SH600"]
 ANALYZER_OPTIONS = ["MAGICL 6200", "MAGICL 8500", "CA 5700", "CM 1000", "CM 1600"]
 POST_OPTION = "CS 700"
 
-# 联机顺序（从右到左）：后处理 → 前处理 → 发光 → 血凝 → 生化 → 尾端
+# Connection order (right to left): Post → Pre → CLIA → Coagulation → Chemistry → Tail
 ORDER_RTL = ["Post", "Pre", "CLIA", "Coagulation", "Chemistry", "Tail"]
 
 LINE_LABEL_EN = {
@@ -268,15 +259,10 @@ LINE_LABEL_EN = {
     "Coagulation": "Hemostasis",
     "Clinical Chemistry": "Clinical Chemistry",
 }
-LINE_LABEL_CN = {
-    "CLIA": "免疫",
-    "Coagulation": "凝血",
-    "Clinical Chemistry": "生化",
-}
 
 
 # =============================================================================
-# 字体工具
+# Font helper
 # =============================================================================
 _FONT_CANDIDATES = [
     "C:/Windows/Fonts/msyh.ttc",
@@ -298,7 +284,7 @@ def _font(size: int):
 
 
 # =============================================================================
-# 标题生成
+# Title generation
 # =============================================================================
 def apply_modifier(text: str, pre_key: str, has_post: bool) -> str:
     if pre_key in ("SH80", "SH80+SHC200"):
@@ -312,40 +298,33 @@ def apply_modifier(text: str, pre_key: str, has_post: bool) -> str:
     return text
 
 
-def make_title(pre_key: str, analyzer_keys: list, has_post: bool):
+def make_title(pre_key: str, analyzer_keys: list, has_post: bool) -> str:
     lines = {MODELS[k]["line"] for k in analyzer_keys}
     uniq_models = set(analyzer_keys)
     n = len(analyzer_keys)
 
+    # ---- Single product line ----
     if len(uniq_models) == 1:
         line = MODELS[analyzer_keys[0]]["line"]
         pl_en = LINE_LABEL_EN[line]
-        pl_cn = LINE_LABEL_CN[line]
         if n == 1:
             en = f"Automation Supplement for the Laboratory's {pl_en}"
-            cn = f"针对实验室{pl_cn}的自动化补充"
         else:
             en = f"Powerful Automation Supplement for the Laboratory's {pl_en}"
-            cn = f"针对实验室{pl_cn}的强力自动化补充"
-        return apply_modifier(en, pre_key, has_post), cn
+        return apply_modifier(en, pre_key, has_post)
 
+    # ---- Mixed product lines ----
     if lines == {"CLIA", "Clinical Chemistry"}:
-        core_en = "Essential Diagnostic Requirements"
-        core_cn = "基础诊断需求"
-    elif lines == {"CLIA", "Coagulation", "Clinical Chemistry"}:
-        core_en = "Comprehensive Diagnostic Requirements"
-        core_cn = "全面诊断需求"
+        core = "Essential Diagnostic Requirements"
     else:
-        core_en = "Comprehensive Diagnostic Requirements"
-        core_cn = "全面诊断需求"
+        core = "Comprehensive Diagnostic Requirements"
 
-    en = f"Powerful Automation System to Cover {core_en} from The Lab"
-    cn = f"覆盖{core_cn}的强大自动化系统"
-    return apply_modifier(en, pre_key, has_post), cn
+    en = f"Powerful Automation System to Cover {core} from The Lab"
+    return apply_modifier(en, pre_key, has_post)
 
 
 # =============================================================================
-# 图片加载 / 占位图
+# Image loading / placeholder
 # =============================================================================
 def _placeholder(model: dict, w: int, h: int) -> Image.Image:
     img = Image.new("RGBA", (w, h), (232, 241, 251, 255))
@@ -360,6 +339,7 @@ def _placeholder(model: dict, w: int, h: int) -> Image.Image:
 
 
 def _load(model: dict) -> Image.Image | None:
+    """Try {img_key}.png, fall back to legacy {img_key}_front.png."""
     for name in (f"{model['img']}.png", f"{model['img']}_front.png"):
         path = IMG_DIR / name
         if path.exists():
@@ -371,23 +351,17 @@ def _load(model: dict) -> Image.Image | None:
 
 
 # =============================================================================
-# 正视图合成（含实体尾端部件）
+# Front-view composition (no scaling, original pixels)
 # =============================================================================
 def compose_pipeline(modules):
-    """合成正视图，返回 (合成图, 总长m, 最大深度m, 占地面积㎡)。"""
-    total_mm = sum(m["L"] for m in modules)
-    scale = TARGET_WIDTH / total_mm
-
+    """Compose the front view without any scaling.
+    Returns (canvas, total_length_m, max_depth_m, footprint_m2).
+    """
     imgs = []
     for m in modules:
-        w_px = max(6, int(round(m["L"] * scale)))
         img = _load(m)
         if img is None:
-            h_px = max(24, int(round(m["H"] * scale)))
-            img = _placeholder(m, w_px, h_px)
-        else:
-            h_px = max(24, int(round(img.height * w_px / img.width)))
-            img = img.resize((w_px, h_px), Image.LANCZOS)
+            img = _placeholder(m, 300, 420)
         imgs.append(img)
 
     total_w = sum(im.width for im in imgs)
@@ -398,19 +372,22 @@ def compose_pipeline(modules):
 
     x = 0
     for i, im in enumerate(imgs):
+        # Bottom-aligned (equivalent to top-aligned when all images are the same height)
         canvas.paste(im, (x, max_h - im.height), im)
+        # 1px separator between units
         if i < len(imgs) - 1:
             d.line([x + im.width, 0, x + im.width, max_h - 1],
                    fill=SEPARATOR_COLOR, width=1)
         x += im.width
 
-    # ---- 左上角占地面积标签 ----
+    # ---- Footprint badge (top-left corner) ----
+    total_mm = sum(m["L"] for m in modules)
     len_m = total_mm / 1000.0
     dep_m = max(m["W"] for m in modules) / 1000.0
     area = len_m * dep_m
 
     badge_font = _font(34)
-    badge_text = f"占地面积  {len_m:.2f} m × {dep_m:.2f} m  =  {area:.2f} m²"
+    badge_text = f"Footprint  {len_m:.2f} m × {dep_m:.2f} m  =  {area:.2f} m²"
     tb = d.textbbox((0, 0), badge_text, font=badge_font)
     tw, th = tb[2] - tb[0], tb[3] - tb[1]
     pad = 16
@@ -425,10 +402,10 @@ def compose_pipeline(modules):
 
 
 # =============================================================================
-# 页面配置与样式
+# Page config & styles
 # =============================================================================
 st.set_page_config(
-    page_title="Metis 6000 / 7000 流水线配置器",
+    page_title="Metis 6000 / 7000 Line Configurator",
     page_icon="🧪",
     layout="wide",
 )
@@ -466,9 +443,6 @@ st.markdown(
     }}
     .result-title .en {{
         font-size: 22px; font-weight: 700; color: {BRAND_DARK}; line-height: 1.35;
-    }}
-    .result-title .cn {{
-        font-size: 15px; color: #475569; margin-top: 6px;
     }}
 
     .spec-card {{
@@ -514,26 +488,26 @@ st.markdown(
 
 
 # =============================================================================
-# 侧边栏：配置
+# Sidebar: configuration
 # =============================================================================
 with st.sidebar:
-    st.markdown("### 🔧 流水线配置")
-    st.caption("必选：前处理模块 + 至少 1 台分析仪")
+    st.markdown("### 🔧 Pipeline Configuration")
+    st.caption("Required: Pre-analytical module + at least 1 analyzer")
 
     pre_key = st.selectbox(
-        "前处理模块",
+        "Pre-analytical Module",
         PRE_OPTIONS,
         index=0,
         format_func=lambda k: MODELS[k]["display"],
     )
 
     st.markdown("---")
-    n_analyzer = st.slider("分析仪数量", MIN_ANALYZERS, MAX_ANALYZERS, 1, 1)
+    n_analyzer = st.slider("Number of Analyzers", MIN_ANALYZERS, MAX_ANALYZERS, 1, 1)
 
     analyzer_keys = []
     for i in range(n_analyzer):
         a = st.selectbox(
-            f"分析仪 {i + 1}",
+            f"Analyzer {i + 1}",
             ANALYZER_OPTIONS,
             index=min(i, len(ANALYZER_OPTIONS) - 1),
             key=f"analyzer_{i}",
@@ -543,19 +517,20 @@ with st.sidebar:
     st.markdown("---")
     cs_available = (pre_key == "SH600")
     has_post = st.checkbox(
-        f"后处理模块 {POST_OPTION}",
+        f"Post-analytical Module {POST_OPTION}",
         disabled=not cs_available,
-        help="CS 700 仅可与 SH600 组合使用" if not cs_available else "SH600 + CS 700 已解锁",
+        help="CS 700 can only be combined with SH600"
+        if not cs_available else "SH600 + CS 700 unlocked",
     )
     if not cs_available:
         has_post = False
-        st.caption("⚠️ CS 700 只能与 SH600 组合")
+        st.caption("⚠️ CS 700 can only be combined with SH600")
     else:
-        st.caption("✅ 当前配置支持 CS 700")
+        st.caption("✅ Current configuration supports CS 700")
 
 
 # =============================================================================
-# 组装模块（按联机顺序：从右到左，尾端在最左端）
+# Assemble modules (right to left; tail end at far left)
 # =============================================================================
 groups = {"Post": [], "Pre": [], "CLIA": [], "Coagulation": [], "Chemistry": [], "Tail": []}
 
@@ -570,27 +545,26 @@ modules_rtl = []
 for g in ORDER_RTL:
     modules_rtl.extend(groups[g])
 
-modules_ltr = list(reversed(modules_rtl))
+modules_ltr = list(reversed(modules_rtl))   # canvas left → right
 
 # =============================================================================
-# 主区域
+# Main area
 # =============================================================================
 st.markdown(
     """
     <div class="main-title">
-        <h1>Metis 6000 / 7000 自动化流水线配置器</h1>
-        <p>选择前处理模块与分析仪组合，实时生成正视图、占地面积与完整参数</p>
+        <h1>Metis 6000 / 7000 Automation Line Configurator</h1>
+        <p>Select a pre-analytical module and analyzers to generate the front view, footprint and full specifications in real time</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-title_en, title_cn = make_title(pre_key, analyzer_keys, has_post)
+title_en = make_title(pre_key, analyzer_keys, has_post)
 st.markdown(
     f"""
     <div class="result-title">
         <div class="en">{title_en}</div>
-        <div class="cn">{title_cn}</div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -599,15 +573,15 @@ st.markdown(
 img, len_m, dep_m, area = compose_pipeline(modules_ltr)
 
 c1, c2, c3 = st.columns(3)
-c1.metric("总长度", f"{len_m:.2f} m")
-c2.metric("最大深度", f"{dep_m:.2f} m")
-c3.metric("占地面积", f"{area:.2f} m²")
+c1.metric("Total Length", f"{len_m:.2f} m")
+c2.metric("Max Depth", f"{dep_m:.2f} m")
+c3.metric("Footprint", f"{area:.2f} m²")
 
 st.image(img, use_container_width=True)
 
-st.markdown("#### 📋 模块参数")
+st.markdown("#### 📋 Module Specifications")
 
-# ---- 只对 show_card=True 的模块渲染参数卡片，尾端模块被过滤掉 ----
+# ---- Render spec cards only for modules with show_card=True ----
 card_modules = [m for m in modules_ltr if m.get("show_card", True)]
 weights = [m["L"] for m in card_modules]
 cols = st.columns(weights, gap="small")
@@ -632,7 +606,7 @@ for col, m in zip(cols, card_modules):
             f"""
             <div class="spec-card">
                 <div class="name">{m['display']}</div>
-                <div class="line">{m['line_cn']} · {m['line']}</div>
+                <div class="line">{m['line']}</div>
                 {rows_html}
             </div>
             """,
@@ -641,6 +615,6 @@ for col, m in zip(cols, card_modules):
 
 st.markdown("---")
 st.caption(
-    "图片资源目录：assets/images/ ｜ 命名规则：{img_key}.png ｜ "
-    "总长度 = 各仪器长度之和 + 尾端 10 cm"
+    "Images directory: assets/images/  |  Naming: {img_key}.png  |  "
+    "Total length = sum of unit lengths + 10 cm tail end  |  Composite view is not scaled"
 )
