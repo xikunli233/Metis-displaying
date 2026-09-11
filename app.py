@@ -3,7 +3,7 @@ Metis 6000 / 7000 流水线配置展示系统（仅正视图 + 实体尾端部�
 ------------------------------------------------
 图片资源目录：assets/images/
 命名规则：{img_key}.png
-尾端部件：tail_end.png（固定长度 100 mm，位于最左端）
+尾端部件：tail_end.png（固定长度 100 mm，位于最左端，不显示参数卡片）
 """
 
 from pathlib import Path
@@ -25,10 +25,10 @@ BRAND = "#1E5EB8"
 BRAND_DARK = "#0F3D7A"
 BRAND_LIGHT = "#E8F1FB"
 
-SEPARATOR_COLOR = (200, 210, 225, 255)   # 仪器之间 1px 分隔线
+SEPARATOR_COLOR = (200, 210, 225, 255)
 
 # =============================================================================
-# 尾端部件（固定 10 cm，位于最左端）
+# 尾端部件（固定 10 cm，位于最左端，不显示参数卡片）
 # =============================================================================
 TAIL_MODEL = dict(
     display="尾端模块",
@@ -39,10 +39,8 @@ TAIL_MODEL = dict(
     W=350,
     H=800,
     img="tail_end",
-    specs={
-        "长度": "100 mm（10 cm）",
-        "说明": "流水线尾端连接段，位于整条流水线最左端",
-    },
+    specs={},       # 空，不展示
+    show_card=False,
 )
 
 # =============================================================================
@@ -57,6 +55,7 @@ MODELS = {
         line_cn="前处理",
         L=520, W=926, H=1055,
         img="sh80",
+        show_card=True,
         specs={
             "吞吐量": "500 管/小时",
             "尺寸 (L×W×H)": "520 × 926 × 1055 mm",
@@ -75,6 +74,7 @@ MODELS = {
         line_cn="前处理",
         L=1200, W=1050, H=1750,
         img="sh80_shc200",
+        show_card=True,
         specs={
             "吞吐量": "320 管/小时",
             "尺寸 (L×W×H)": "1200 × 1050 × 1750 mm",
@@ -92,6 +92,7 @@ MODELS = {
         line_cn="前处理",
         L=1170, W=1140, H=1450,
         img="sh600e",
+        show_card=True,
         specs={
             "吞吐量": "400 管/小时",
             "尺寸 (L×W×H)": "1170 × 1140 × 1450 mm",
@@ -110,6 +111,7 @@ MODELS = {
         line_cn="前处理",
         L=1170, W=1140, H=1450,
         img="sh600",
+        show_card=True,
         specs={
             "吞吐量": "400 管/小时",
             "尺寸 (L×W×H)": "1170 × 1140 × 1450 mm",
@@ -132,6 +134,7 @@ MODELS = {
         line_cn="化学发光",
         L=1100, W=930, H=1200,
         img="magicl_6200",
+        show_card=True,
         specs={
             "吞吐量": "400 T/h",
             "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
@@ -155,6 +158,7 @@ MODELS = {
         line_cn="化学发光",
         L=1100, W=930, H=1200,
         img="magicl_8500",
+        show_card=True,
         specs={
             "吞吐量": "600 T/h",
             "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
@@ -178,6 +182,7 @@ MODELS = {
         line_cn="凝血",
         L=1100, W=922, H=1340,
         img="ca_5700",
+        show_card=True,
         specs={
             "吞吐量": "400 T/h",
             "尺寸 (L×W×H)": "1100 × 922 × 1340 mm",
@@ -197,6 +202,7 @@ MODELS = {
         line_cn="临床生化",
         L=1100, W=930, H=1200,
         img="cm_1000",
+        show_card=True,
         specs={
             "吞吐量": "1000 T/h",
             "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
@@ -217,6 +223,7 @@ MODELS = {
         line_cn="临床生化",
         L=1100, W=930, H=1200,
         img="cm_1600",
+        show_card=True,
         specs={
             "吞吐量": "1600 T/h",
             "尺寸 (L×W×H)": "1100 × 930 × 1200 mm",
@@ -239,6 +246,7 @@ MODELS = {
         line_cn="后处理",
         L=1020, W=1135, H=1450,
         img="cs_700",
+        show_card=True,
         specs={
             "容量": "4500 管",
             "吞吐量": "1200 管/小时",
@@ -352,7 +360,6 @@ def _placeholder(model: dict, w: int, h: int) -> Image.Image:
 
 
 def _load(model: dict) -> Image.Image | None:
-    """优先找 {img_key}.png，兼容旧命名 {img_key}_front.png。"""
     for name in (f"{model['img']}.png", f"{model['img']}_front.png"):
         path = IMG_DIR / name
         if path.exists():
@@ -368,10 +375,9 @@ def _load(model: dict) -> Image.Image | None:
 # =============================================================================
 def compose_pipeline(modules):
     """合成正视图，返回 (合成图, 总长m, 最大深度m, 占地面积㎡)。"""
-    total_mm = sum(m["L"] for m in modules)   # 已包含尾端 100 mm
+    total_mm = sum(m["L"] for m in modules)
     scale = TARGET_WIDTH / total_mm
 
-    # ---- 逐个加载并缩放到真实长度比例 ----
     imgs = []
     for m in modules:
         w_px = max(6, int(round(m["L"] * scale)))
@@ -393,7 +399,6 @@ def compose_pipeline(modules):
     x = 0
     for i, im in enumerate(imgs):
         canvas.paste(im, (x, max_h - im.height), im)
-        # 仪器之间画 1px 细分隔线，方便视觉区分（不占长度）
         if i < len(imgs) - 1:
             d.line([x + im.width, 0, x + im.width, max_h - 1],
                    fill=SEPARATOR_COLOR, width=1)
@@ -559,13 +564,13 @@ if has_post:
 groups["Pre"].append(MODELS[pre_key])
 for k in analyzer_keys:
     groups[MODELS[k]["group"]].append(MODELS[k])
-groups["Tail"].append(TAIL_MODEL)   # 尾端固定加在最左端
+groups["Tail"].append(TAIL_MODEL)
 
 modules_rtl = []
 for g in ORDER_RTL:
     modules_rtl.extend(groups[g])
 
-modules_ltr = list(reversed(modules_rtl))   # 画布从左到右
+modules_ltr = list(reversed(modules_rtl))
 
 # =============================================================================
 # 主区域
@@ -599,14 +604,15 @@ c2.metric("最大深度", f"{dep_m:.2f} m")
 c3.metric("占地面积", f"{area:.2f} m²")
 
 st.image(img, use_container_width=True)
-st.caption("最左端浅色段为尾端部件（10 cm，使用 tail_end.png 素材），仪器之间以 1px 细线分隔")
 
 st.markdown("#### 📋 模块参数")
 
-weights = [m["L"] for m in modules_ltr]
+# ---- 只对 show_card=True 的模块渲染参数卡片，尾端模块被过滤掉 ----
+card_modules = [m for m in modules_ltr if m.get("show_card", True)]
+weights = [m["L"] for m in card_modules]
 cols = st.columns(weights, gap="small")
 
-for col, m in zip(cols, modules_ltr):
+for col, m in zip(cols, card_modules):
     with col:
         rows_html = ""
         for k, v in m["specs"].items():
